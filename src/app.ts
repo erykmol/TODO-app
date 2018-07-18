@@ -11,7 +11,7 @@ ui.contentView.append(
     top: 12,
     font: '20px'
   })
-).children();
+);
 
 const tasksDisplay = ui.find(TextView).first();
 
