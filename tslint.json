@@ -14,6 +14,7 @@
       true,
       "single"
     ],
+    "no-unsafe-any": true,
     "no-unused-variable": [
       true,
       {
