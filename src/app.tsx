@@ -66,9 +66,9 @@ const saving = () => {
 };
 
 const tempName = (event: TextInputAcceptEvent) => {
-//  if(event.text.length>24) {
-//    throw new Error('Task description too long.');
-//  }
+  if(event.text.length>24) {
+    throw new Error('Task description too long.');
+  }
   tasksDisplay.text = tasksCompleted + ' tasks complete out of ' + (++allTasks);
   const newTask = new CheckBox({
     left: 29, top: 'prev() 30', right: 'next() 29',
@@ -85,7 +85,7 @@ const tempName = (event: TextInputAcceptEvent) => {
     }
   }).appendTo(ui.contentView);
   new Button({
-    right: 29, top: 'prev() -32',left: 'next() 275',
+    right: 29, top: 'prev() -32',
     text: 'Delete'
   }).on({select: ({target}) => {
       if(newTask.checked === true) {
