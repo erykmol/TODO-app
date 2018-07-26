@@ -1,4 +1,5 @@
-import { ui, CheckBox, TextView, TextInputAcceptEvent, Button, ToggleButton } from 'tabris';
+import { ui, CheckBox, TextView, TextInputAcceptEvent, Button, RadioButtonSelectEvent } from 'tabris';
+ui.drawer.enabled = true;
 
 interface Task {
   checked: boolean;
@@ -8,73 +9,12 @@ interface Task {
 let tasksCompleted = 0;
 let allTasks = 0;
 
-const saveRestore = () => {
-  const tasks: object = JSON.parse(localStorage.getItem('boxArr'));
-  if (!isCheckboxArray(tasks)) {
-    throw new Error('Unexpected format of checkbox array.');
-  }
-  const savedTasksCompleted = Number(localStorage.getItem('tasksCompleted'));
-  const savedAllTasks = Number(localStorage.getItem('allTasks'));
-  tasksCompleted = savedTasksCompleted;
-  allTasks = savedAllTasks;
-  tasksDisplay.text = tasksCompleted + ' tasks complete out of ' + allTasks;
-  for (const task of tasks) {
-    const oldTask = new CheckBox({
-      left: 29, top: 'prev() 30', right: 'next() 29',
-      checked: task.checked,
-      textColor: '#ff16a2',
-      text: task.text
-    }).on({checkedChanged: ({ value }) => {
-        if (value === true) {
-          tasksDisplay.text = (++tasksCompleted) + ' tasks complete out of ' + allTasks;
-        } else {
-          tasksDisplay.text = (--tasksCompleted) + ' tasks complete out of ' + allTasks;
-        }
-        saving();
-      }
-    }).appendTo(ui.contentView);
-    new Button({
-      right: 29, top: 'prev() -32', left: 'next() 275',
-      text: 'Delete'
-    }).on({select: ({target}) => {
-      if(oldTask.checked === true) {
-        tasksDisplay.text = (--tasksCompleted) + ' tasks complete out of ' + (--allTasks);
-      } else {
-        tasksDisplay.text = tasksCompleted + ' tasks complete out of ' + (--allTasks);
-      }
-      oldTask.dispose(),
-      target.dispose(),
-      saving();}
-    }).appendTo(ui.contentView);
-  }
-};
-
-const saving = () => {
-  localStorage.clear();
-  const countBox = ui.find(CheckBox);
-  const tasksArray: Task[] = [];
-  countBox.forEach((element) => {
-    const taskData = {
-      checked: element.checked,
-      text: element.text
-    };
-    tasksArray.push(taskData);
-  });
-  localStorage.setItem('boxArr', JSON.stringify(tasksArray));
-  localStorage.setItem('tasksCompleted', JSON.stringify(tasksCompleted));
-  localStorage.setItem('allTasks', JSON.stringify(allTasks));
-};
-
-const tempName = (event: TextInputAcceptEvent) => {
-  if(event.text.length>24) {
-    throw new Error('Task description too long.');
-  }
-  tasksDisplay.text = tasksCompleted + ' tasks complete out of ' + (++allTasks);
+const taskCreate = (checkBoxEvent: any , checkedState= false) => {
   const newTask = new CheckBox({
     left: 29, top: 'prev() 30', right: 'next() 29',
-    checked: false,
+    checked: checkedState,
     textColor: '#ff16a2',
-    text: event.text
+    text: checkBoxEvent.text
   }).on({checkedChanged: ({ value }) => {
       if(value === true) {
         tasksDisplay.text = (++tasksCompleted) + ' tasks complete out of ' + allTasks;
@@ -98,7 +38,66 @@ const tempName = (event: TextInputAcceptEvent) => {
       saving();
     }
   }).appendTo(ui.contentView);
+};
+
+const saveRestore = (option: number) => {
+  const tasks: object = JSON.parse(localStorage.getItem('tasksArray'));
+  if (!isCheckboxArray(tasks)) {
+    throw new Error('Unexpected format of checkbox array.');
+  }
+  const savedTasksCompleted = Number(localStorage.getItem('tasksCompleted'));
+  const savedAllTasks = Number(localStorage.getItem('allTasks'));
+  tasksCompleted = savedTasksCompleted;
+  allTasks = savedAllTasks;
+  tasksDisplay.text = tasksCompleted + ' tasks complete out of ' + allTasks;
+  for (const task of tasks) {
+    if(task.checked === false && option === 1) {taskCreate(task,task.checked);}
+    if(task.checked === true && option === 2) {taskCreate(task,task.checked);}
+    if(option === 3) {taskCreate(task,task.checked);}
+  }
+};
+
+const saving = () => {
+  localStorage.clear();
+  const countBox = ui.find(CheckBox);
+  const tasksArray: Task[] = [];
+  countBox.forEach((element) => {
+    const taskData = {
+      checked: element.checked,
+      text: element.text
+    };
+    tasksArray.push(taskData);
+  });
+  localStorage.setItem('tasksArray', JSON.stringify(tasksArray));
+  localStorage.setItem('tasksCompleted', JSON.stringify(tasksCompleted));
+  localStorage.setItem('allTasks', JSON.stringify(allTasks));
+};
+
+const tempName = (event: TextInputAcceptEvent) => {
+  if(event.text.length>21) {
+    throw new Error('Task description too long.');
+  }
+  tasksDisplay.text = tasksCompleted + ' tasks complete out of ' + (++allTasks);
+  taskCreate(event);
   saving();
+};
+
+const options = (event: RadioButtonSelectEvent) => {
+  if (event.target.text === 'All tasks' && event.target.checked === true) {
+    ui.find(CheckBox).dispose();
+    ui.find(Button).dispose();
+    saveRestore(3);
+  }
+  if (event.target.text === 'Finished tasks' && event.target.checked === true) {
+      ui.find(CheckBox).dispose();
+      ui.find(Button).dispose();
+      saveRestore(2);
+  }
+  if (event.target.text === 'Unfinished tasks' && event.target.checked === true) {
+      ui.find(CheckBox).dispose();
+      ui.find(Button).dispose();
+      saveRestore(1);
+  }
 };
 
 ui.contentView.append(
@@ -111,7 +110,11 @@ ui.contentView.append(
   <textInput top='prev() 20' left='20%' right='20%' message='Type here, then confirm' onAccept={tempName} />
 );
 
-saveRestore();
+ui.drawer.append(
+  <radioButton left={30}  top='prev() 25' text='All tasks' checked={false} onSelect={options}/>,
+  <radioButton left={30}  top='prev() 25' text='Finished tasks' checked={false} onSelect={options}/>,
+  <radioButton left={30}  top='prev() 25' text='Unfinished tasks' checked={false} onSelect={options}/>
+);
 
 function isCheckboxArray(value: any): value is Task[] {
   return value instanceof Array

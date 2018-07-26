@@ -10,7 +10,8 @@
     "noImplicitThis": true,
     "alwaysStrict": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "strictNullChecks": true
   },
   "include": [
     "./src/**/*.ts",
