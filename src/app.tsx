@@ -220,5 +220,5 @@ frontPage.append(
   <textInput top='prev() 20' message='Type the name of an event' onAccept={tempName} centerX={0}/>,
   <textView top='prev() 20' id='input' text='No upcoming events' font='20px' centerX={0}/>
 );
-saveRestore();
+if(JSON.parse(localStorage.getItem('eventsArray'))!==null) { saveRestore(); }
 setInterval(checkHighlight,3000,eventMap);
