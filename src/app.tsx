@@ -1,224 +1,156 @@
-import { ui, TextView, Page, NavigationView, TextInputAcceptEvent, Button, TextInput } from 'tabris';
+import { ui, TextView, Composite, ImageView, RadioButtonSelectEvent, CollectionView, Button, RadioButton } from 'tabris';
+ui.drawer.enabled = true;
 
-class Event {
-  public date: string;
-  public time: string;
-  public duration: string;
-  public description: string;
-  public text: string;
-}
+const scheduleList = '{\
+  "Friday, Sept. 14, 2018\\n\\n": [\
+    "4:00pm – 8:00pm: Registration at Blue Mountain at the Grand Central Lodge in the Village\\n",\
+    "4:00pm – 8:00pm: Vendor Village – Lift Plaza\\n"\
+  ],\
+  "Saturday, Sept. 15, 2018\\n\\n": [\
+    "6:00am – 4:00pm: Registration in the Grand Central Lodge in the Village\\n",\
+    "7:30am – 4:00pm: Vendor Village – Lift Plaza\\n",\
+    "8:00am – 8:15am: 120km Start (Gord Canning Blvd Start Area)\\n",\
+    "10:00am – 10:20am: 80km Start (Gord Canning Blvd Start Area)\\n",\
+    "11:00am – 4:00pm: Interactive Family Activities – Blue Mountain Village\\n",\
+    "11:00am – 4:00pm: Post Race Food\\n",\
+    "11:00am – 5:00pm: Live Music – Coca-Cola Village Stage\\n",\
+    "1:15pm – 2:00pm: 80km Awards on the stage in the Events Plaza\\n",\
+    "2:30pm – 3:00pm: 120km Awards on the stage in the Events Plaza\\n"\
+  ],\
+  "Sunday, Sept. 16, 2018\\n\\n": [\
+    "6:00am – 8:30am: Registration in the Grand Central Lodge in the Village\\n",\
+    "8:00am – 2:00pm: Vendor Village – Lift Plaza\\n",\
+    "8:00am: 40km Start (Gord Canning Blvd Start Area)\\n",\
+    "10:30am: True Grit 70km Start(Gord Canning Blvd Start Area)\\n",\
+    "10:45am: True Grit 40km Start(Gord Canning Blvd Start Area)\\n",\
+    "10:45am – 11:15pm: 40km Awards on the stage in the Events Plaza\\n",\
+    "11:30am: Kid’s Race (Gord Canning Blvd Start Area)\\n",\
+    "11:30am - 4:00pm: Live Music – Coca-Cola Village Stage\\n",\
+    "1:15pm – 2:00pm: True Grit Awards on the stage in the Events Plaza\\n"\
+  ]\
+}';
 
-const eventMap = new Map<Event,Button>();
+const filter = ( day = 'All', button = ''): string[] => {
+  const schedule = JSON.parse(scheduleList);
+  const daysList = Object.keys(schedule);
+  const modelArr: string[] = [];
+  let modelList = '';
 
-const eventErrorMapCheck = (inputCount: number, event: Event, titleButton: Button) => {
-  if(eventMap.size!==0 && event.date!==undefined && event.time!==undefined && event.duration!==undefined){
-    const currentSplitDate = event.date.split('.');
-    const currentSplitTime = event.time.split(':');
-    for(const [savedEvent,savedTitleButton] of eventMap){
-      const savedSplitDate = savedEvent.date.split('.');
-      const savedSplitTime = savedEvent.time.split(':');
-      if(titleButton.text!==savedTitleButton.text && Number(savedSplitDate[0])===Number(currentSplitDate[0]) &&
-      Number(savedSplitDate[1])===Number(currentSplitDate[1]) &&
-      Number(savedSplitDate[2])===Number(currentSplitDate[2]) &&
-      (Number(savedSplitTime[0])===Number(currentSplitTime[0]) ||
-      Number(currentSplitTime[0])+Number(event.duration)>Number(savedSplitTime[0]))) {
-        throw new Error('conflicts with: ' + savedTitleButton.text);
-      }
-    }
-  }
-  if(inputCount===4) {
-    eventMap.set(event,titleButton);
-  }
-  saving();
-};
-
-function edit(changedEvent: Event, titleName: string = 'Edit Page', titleButton: Button, eventPage: Page = new Page()) {
-  let inputCount = 0;
-  changedEvent.text = titleButton.text;
-  const textViewCount = eventPage.find(TextView);
-  const editPage = new Page({
-    title: titleName
-  }).appendTo(navigationView);
-  new TextInput({
-    top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Date'
-  }).on({accept: ({ target }) => {
-      if (textViewCount.length < 4) {
-        changedEvent.date = target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-      else {
-        textViewCount[0].text = target.text;
-        changedEvent.date = target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-    }
-  }).appendTo(editPage);
-  new TextInput({
-    top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Time'
-  }).on({
-    accept: ({ target }) => {
-      if (textViewCount.length < 4) {
-        changedEvent.time = 'Date: ' + target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-      else {
-        textViewCount[1].text = 'Time: ' + target.text;
-        changedEvent.time = target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-    }
-  }).appendTo(editPage);
-  new TextInput({
-    top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Duration'
-  }).on({accept: ({ target }) => {
-      if (textViewCount.length < 4) {
-        changedEvent.duration = target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-      else {
-        textViewCount[2].text = 'Duration: ' + target.text + 'h';
-        changedEvent.duration = target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-    }
-  }).appendTo(editPage);
-  new TextInput({
-    top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Description'
-  }).on({accept: ({ target }) => {
-      if (textViewCount.length < 4) {
-        changedEvent.description = target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-      else {
-        textViewCount[3].text = 'Description: ' + target.text;
-        changedEvent.description = target.text;
-        inputCount = inputCount + 1;
-        eventErrorMapCheck(inputCount,changedEvent,titleButton);
-      }
-    }
-  }).appendTo(editPage);
-}
-
-const checkHighlight = (eventButtonMap: Map<Event,Button>) => {
-  const nowDate = new Date();
-  const nextEventDisplay = frontPage.find(TextView).first();
-  for(const [event,titleButton] of eventButtonMap){
-    const splitDate = event.date.split('.');
-    const splitTime = event.time.split(':');
-    if (Number(splitDate[0])===nowDate.getDate() &&
-      Number(splitDate[1])===(nowDate.getMonth() + 1) &&
-      Number(splitDate[2])===nowDate.getFullYear()) {
-        if ((nowDate.getHours()===Number(splitTime[0]) && nowDate.getMinutes()>=Number(splitTime[1])) ||
-        (nowDate.getHours()>Number(splitTime[0]) && nowDate.getHours()-Number(splitTime[0])<Number(event.duration))) {
-        titleButton.textColor = '#f202ff';
-      }else if(nowDate.getHours()<Number(splitTime[0])){
-        nextEventDisplay.text = 'Next coming event: ' + titleButton.text;
-      }else {
-        titleButton.dispose();
-      }
-    }else if(Number(splitDate[0])<nowDate.getDate() ||
-      Number(splitDate[1])<(nowDate.getMonth() + 1) ||
-      Number(splitDate[2])<nowDate.getFullYear()) {
-        titleButton.dispose();
-    }else if(Number(splitDate[0])-nowDate.getDate()<=4 && Number(splitDate[0])-nowDate.getDate()>0 &&
-      Number(splitDate[1])===(nowDate.getMonth() + 1) &&
-      Number(splitDate[2])===nowDate.getFullYear()){
-        nextEventDisplay.text = 'Next coming event: ' + titleButton.text;
-    }
-  }
-};
-
-const eventCreate = (buttonEvent: any, newEvent= new Event(), restoreSaveFlag= false) => {
-  const eventTitle = new Button({
-    top: 'prev() 30', left: 40,
-    text: buttonEvent.text
-  }).on({select: () => {
-      const displayPage = new Page({
-        title: 'Event Page'
-      }).appendTo(navigationView);
-      new TextView({
-        top: 'prev() 30', left: 40, font: 'bold 16px',
-        text: 'Date: ' + newEvent.date
-      }).appendTo(displayPage);
-      new TextView({
-        top: 'prev() 30', left: 40, font: 'bold 16px',
-        text: 'Time: ' + newEvent.time
-      }).appendTo(displayPage);
-      new TextView({
-        top: 'prev() 30', left: 40, font: 'bold 16px',
-        text: 'Duration: ' + newEvent.duration + 'h'
-      }).appendTo(displayPage);
-      new TextView({
-        top: 'prev() 30', left: 40, font: 'bold 16px', right: 40,
-        text: 'Description: ' + newEvent.description
-      }).appendTo(displayPage);
-      new Button({
-        top: 'prev() 30', left: 40,
-        text: 'Edit'
-      }).on({select: () => {
-          edit(newEvent,'Edit Page',eventTitle,displayPage);
+  if(button === 'map'){
+    model.push('resources/map.png');
+    return model;
+  }else {
+    if( day === 'All' ){
+      for(const keyDay of daysList){
+        modelList=keyDay;
+        for(const activity of schedule[keyDay]){
+          modelList+=activity;
         }
-      }).appendTo(displayPage);
+        modelArr.push(modelList);
+      }
+      return modelArr;
     }
-  }).appendTo(frontPage);
-  if(restoreSaveFlag===false) {
-    edit(newEvent, 'Event Page', eventTitle); }else { eventMap.set(newEvent,eventTitle); }
-};
-
-function isEventArray(value: any): value is Event[] {
-  return value instanceof Array
-    && value.every((entry: Event) => typeof entry.date === 'string' && typeof entry.time === 'string' &&
-    typeof entry.duration === 'string' && typeof entry.description === 'string');
-}
-
-const saveRestore = () => {
-  const events: object = JSON.parse(localStorage.getItem('eventsArray'));
-  if (!isEventArray(events)) {
-    throw new Error('Unexpected format of event array.');
+    if( day === 'First Day' ){
+      modelList=daysList[0];
+      for(const activity of schedule[daysList[0]]){
+        modelList+=activity;
+      }
+      modelArr.push(modelList);
+      return modelArr;
+    }
+    if( day === 'Second Day' ){
+      modelList=daysList[1];
+      for(const activity of schedule[daysList[1]]){
+        modelList+=activity;
+      }
+      modelArr.push(modelList);
+      return modelArr;
+    }
+    if( day === 'Last Day' ){
+      modelList=daysList[2];
+      for(const activity of schedule[daysList[2]]){
+      modelList+=activity;
+      }
+      modelArr.push(modelList);
+      return modelArr;
+    }
   }
-  for (const event of events) {
-    eventCreate(event,event,true);
-  }
 };
 
-const saving = () => {
-  localStorage.clear();
-  const eventsArray: Event[] = [];
-  eventMap.forEach((value,key) => {
-    eventsArray.push(key);
-  });
-  localStorage.setItem('eventsArray', JSON.stringify(eventsArray));
-};
+let model = filter();
 
-const tempName = (event: TextInputAcceptEvent) => {
-  if (event.text.length > 21) {
-    throw new Error('Event title too long.');
-  }
-  eventCreate(event);
-};
+const frontPage = new CollectionView({
+  left: 0, top: 35, right: 0, bottom: 0,
+  backgroundImage: 'resources/back.png',
+  itemCount: model.length,
+  cellHeight: 'auto',
+  createCell: () => {
+    const cell = new Composite();
+    new TextView({
+      left: 30, top: 'prev() 16', right: 30,
+      font: 'bold 20px', textColor: '#efeded',
+      alignment: 'center'
+    }).appendTo(cell);
+    new ImageView({
+      zoomEnabled: true,
+      top: 'prev() 25', scaleMode: 'stretch'
+    }).appendTo(cell);
+    return cell;
+  },
+  updateCell: (cell, index) => {
+      cell.apply({
+        TextView: {text: model[index]},
+        ImageView: {image: model[index]}
+      });
+}}).appendTo(ui.contentView);
 
-const navigationView = new NavigationView({
-  left: 0, top: 0, right: 0, bottom: 0
+new TextView({
+  centerX: 0, top: 10,
+  text: 'Centurion cycling',
+  font: 'bold 20px'
 }).appendTo(ui.contentView);
 
-const frontPage = new Page({
-  title: 'Event list'
-}).appendTo(navigationView);
+const options = (event: RadioButtonSelectEvent) => {
+  if (event.target.text === 'All' && event.target.checked === true) {
+    model = filter();
+    frontPage.load(model.length);
+  }
+  if (event.target.text === 'First Day' && event.target.checked === true) {
+    model = filter(event.target.text);
+    frontPage.load(model.length);
+  }
+  if (event.target.text === 'Second Day' && event.target.checked === true) {
+    model = filter(event.target.text);
+    frontPage.load(model.length);
+  }
+  if (event.target.text === 'Last Day' && event.target.checked === true) {
+    model = filter(event.target.text);
+    frontPage.load(model.length);
+  }
+};
 
-frontPage.append(
-  <textInput top='prev() 20' message='Type the name of an event' onAccept={tempName} centerX={0}/>,
-  <textView top='prev() 20' id='input' text='No upcoming events' font='20px' centerX={0}/>
+ui.drawer.append(
+  <radioButton left={30}  top='prev() 25' text='All' checked={false} onSelect={options}/>,
+  <radioButton left={30}  top='prev() 25' text='First Day' checked={false} onSelect={options}/>,
+  <radioButton left={30}  top='prev() 25' text='Second Day' checked={false} onSelect={options}/>,
+  <radioButton left={30}  top='prev() 25' text='Last Day' checked={false} onSelect={options}/>
 );
-if(JSON.parse(localStorage.getItem('eventsArray'))!==null) { saveRestore(); }
-setInterval(checkHighlight,3000,eventMap);
+new Button({
+  top: 'prev() 25', left: 30,
+  text: 'map',
+  font: '15px'
+}).on({select : () => {
+  let radioButtonFlag = 0;
+  ui.drawer.find(RadioButton).forEach((widget) => {
+    if(widget.checked === true){
+      model = filter(widget.text,'map');
+      frontPage.load(model.length);
+    }else {
+      radioButtonFlag+=1;
+    }
+  });
+  if(radioButtonFlag===ui.drawer.find(RadioButton).length){
+      model = filter('All','map');
+      frontPage.load(model.length);
+  }
+}}).appendTo(ui.drawer);
