@@ -41,7 +41,8 @@ function edit(changedEvent: Event, titleName: string = 'Edit Page', titleButton:
   }).appendTo(navigationView);
   new TextInput({
     top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Date'
+    message: 'Date',
+    text: changedEvent.date
   }).on({accept: ({ target }) => {
       if (textViewCount.length < 4) {
         changedEvent.date = target.text;
@@ -58,7 +59,8 @@ function edit(changedEvent: Event, titleName: string = 'Edit Page', titleButton:
   }).appendTo(editPage);
   new TextInput({
     top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Time'
+    message: 'Time',
+    text: changedEvent.time
   }).on({
     accept: ({ target }) => {
       if (textViewCount.length < 4) {
@@ -76,7 +78,8 @@ function edit(changedEvent: Event, titleName: string = 'Edit Page', titleButton:
   }).appendTo(editPage);
   new TextInput({
     top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Duration'
+    message: 'Duration',
+    text: changedEvent.duration
   }).on({accept: ({ target }) => {
       if (textViewCount.length < 4) {
         changedEvent.duration = target.text;
@@ -93,7 +96,8 @@ function edit(changedEvent: Event, titleName: string = 'Edit Page', titleButton:
   }).appendTo(editPage);
   new TextInput({
     top: 'prev() 30', left: 40, font: '16px', right: 40,
-    message: 'Description'
+    message: 'Description',
+    text: changedEvent.description
   }).on({accept: ({ target }) => {
       if (textViewCount.length < 4) {
         changedEvent.description = target.text;
@@ -125,12 +129,19 @@ const checkHighlight = (eventButtonMap: Map<Event,Button>) => {
       }else if(nowDate.getHours()<Number(splitTime[0])){
         nextEventDisplay.text = 'Next coming event: ' + titleButton.text;
       }else {
+        eventButtonMap.delete(event);
         titleButton.dispose();
+        saving();
       }
-    }else if(Number(splitDate[0])<nowDate.getDate() ||
-      Number(splitDate[1])<(nowDate.getMonth() + 1) ||
+    }else if((Number(splitDate[0])<nowDate.getDate() &&
+      (Number(splitDate[1])<(nowDate.getMonth() + 1) || Number(splitDate[1])===(nowDate.getMonth() + 1)) &&
+      (Number(splitDate[2])<nowDate.getFullYear() || Number(splitDate[2])===nowDate.getFullYear())) ||
+      (Number(splitDate[1])<(nowDate.getMonth() + 1) &&
+      (Number(splitDate[2])<nowDate.getFullYear() || Number(splitDate[2])===nowDate.getFullYear())) ||
       Number(splitDate[2])<nowDate.getFullYear()) {
+        eventButtonMap.delete(event);
         titleButton.dispose();
+        saving();
     }else if(Number(splitDate[0])-nowDate.getDate()<=4 && Number(splitDate[0])-nowDate.getDate()>0 &&
       Number(splitDate[1])===(nowDate.getMonth() + 1) &&
       Number(splitDate[2])===nowDate.getFullYear()){
